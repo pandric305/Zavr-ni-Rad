@@ -1,0 +1,117 @@
+#include <DHT.h>
+#include <math.h>
+#include <MHZ.h>
+#include <LiquidCrystal.h>
+int sensorPin=A0;
+#define DHTPIN 2
+#define DHTTYPE DHT22
+
+DHT dht(DHTPIN, DHTTYPE); //define DHT function
+
+float hum;  //Stores humidity value
+float temp; //Stores temperature value
+float temp1;
+float temp2;
+float R0=9629.35;
+long CO;
+int MH_Z19B = 6;
+double pwm1;
+double pwm2;
+double pr1;
+double pr2;
+double pr3;
+double rezultat;
+float CO_temp;
+
+const int pin_RS=12;
+const int pin_E=13;
+const int pin_d4=8;
+const int pin_d5=9;
+const int pin_d6=10;
+const int pin_d7=11;
+
+LiquidCrystal lcd(pin_RS, pin_E, pin_d4, pin_d5, pin_d6, pin_d7);
+
+void setup() {
+  // put your setup code here, to run once:
+Serial.begin(9600);   
+dht.begin();
+pinMode(MH_Z19B, INPUT);
+lcd.begin(16,2);
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  //citanje vlage i temperature
+    hum = dht.readHumidity();
+    temp= dht.readTemperature();
+Serial.println(hum);
+Serial.println(temp);
+
+//citanje kolicine CO
+
+float sensorIznos = analogRead(sensorPin);
+float temp1;
+float ppm1;
+float senzorNapon;
+      senzorNapon=sensorIznos/1024;
+      senzorNapon=senzorNapon*5.0;
+float napon1=5.0-senzorNapon;
+      napon1=napon1/senzorNapon;
+float RS=9950*napon1;
+float e=-1.514;
+temp2=RS/R0;
+CO=99.807*pow(temp2,e);
+Serial.print("CO ");
+Serial.println(CO);
+
+
+//citanje CO2
+pwm1 = pulseIn(MH_Z19B, HIGH);
+  pwm2 = pulseIn(MH_Z19B, LOW);
+
+  pr1=pwm1-2;
+  pr2=pwm1+pwm2-4;
+  pr3=pr1/pr2;
+ 
+  rezultat=2000*pr3;
+  Serial.print("CO2: ");
+  Serial.print(rezultat);
+  Serial.println(" ppm");
+
+  //LCD prikaz
+  if(CO<20){
+  lcd.setCursor(0,0);
+//lcd.print("Vlaga: ");
+lcd.print(hum);
+lcd.print("%RH ");
+//lcd.print("Temp: ");
+lcd.print(temp);
+lcd.print(" C");
+lcd.setCursor(0,1);
+//lcd.print("CO2: ");
+lcd.print(rezultat);
+lcd.print("ppm ");
+lcd.print("<20ppm");
+  }
+  else
+  {
+    lcd.setCursor(0,0);
+
+lcd.print(hum);
+lcd.print("%RH ");
+
+lcd.print(temp);
+lcd.print(" C");
+lcd.setCursor(0,1);
+
+lcd.print(rezultat);
+lcd.print("ppm");
+
+lcd.print(CO);
+lcd.print("ppm");
+    }
+
+
+delay(2000);   
+}
